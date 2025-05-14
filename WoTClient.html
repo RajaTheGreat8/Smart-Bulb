@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebThing Smart Bulb</title>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <style>
+      body {
+        text-align: center;
+        font-family: Arial, sans-serif;
+      }
+      .bulb-container img {
+        width: 150px;
+        height: 150px;
+      }
+      .slidecontainer {
+        width: 50%;
+        margin: auto;
+      }
+      input[type="range"] {
+        width: 100%;
+      }
+      .color-picker {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebThing Smart Bulb</h1>
+    <h2>Toggle Power & Adjust Brightness</h2>
+
+    <!-- Bulb Image -->
+    <div class="bulb-container">
+      <img id="bulb-image" src="images/bulb-off.png" alt="Bulb" />
+    </div>
+
+    <!-- Power Control Buttons -->
+    <button id="on_button">Turn On</button>
+    <button id="off_button">Turn Off</button>
+
+    <!-- Brightness Control -->
+    <div class="slidecontainer">
+      <p>Brightness: <span id="brightness-value">50</span>%</p>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="50"
+        id="brightness"
+        disabled
+      />
+    </div>
+
+    <!-- Color Picker -->
+    <div class="color-picker">
+      <h3>Pick Bulb Color</h3>
+      <input type="color" id="colorPicker" value="#ffffff" disabled />
+    </div>
+
+    <!-- Keep everything else same... just replace the <script> tag with the updated one below -->
+    <script>
+      const serverUrl = "http://localhost:8080";
+
+      function updateBulbImage(state) {
+        $("#bulb-image").attr(
+          "src",
+          state ? "images/bulb-on.png" : "images/bulb-off.png"
+        );
+      }
+
+      $("#on_button").click(function () {
+        $.ajax({
+          url: `${serverUrl}/properties/on`,
+          type: "PUT",
+          contentType: "application/json",
+          data: JSON.stringify({ on: true }),
+          success: function () {
+            updateBulbImage(true);
+            $("#brightness").prop("disabled", false);
+            $("#colorPicker").prop("disabled", false);
+          },
+        });
+      });
+
+      $("#off_button").click(function () {
+        $.ajax({
+          url: `${serverUrl}/properties/on`,
+          type: "PUT",
+          contentType: "application/json",
+          data: JSON.stringify({ on: false }),
+          success: function () {
+            updateBulbImage(false);
+            $("#brightness").prop("disabled", true);
+            $("#colorPicker").prop("disabled", true);
+          },
+        });
+      });
+
+      $("#brightness").on("input", function () {
+        const value = parseInt($(this).val());
+        $("#brightness-value").text(value);
+        $.ajax({
+          url: `${serverUrl}/properties/brightness`,
+          type: "PUT",
+          contentType: "application/json",
+          data: JSON.stringify({ brightness: value }),
+        });
+      });
+
+      // Convert #rrggbb hex to hue (0-360)
+      function hexToHue(hex) {
+        const r = parseInt(hex.substr(1, 2), 16) / 255;
+        const g = parseInt(hex.substr(3, 2), 16) / 255;
+        const b = parseInt(hex.substr(5, 2), 16) / 255;
+
+        const max = Math.max(r, g, b),
+          min = Math.min(r, g, b);
+        let h;
+        const d = max - min;
+
+        if (d === 0) h = 0;
+        else if (max === r) h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+        return h;
+      }
+
+      $("#colorPicker").on("input", function () {
+        const hex = $(this).val();
+        const hue = hexToHue(hex);
+
+        $.ajax({
+          url: `${serverUrl}/properties/colorHue`,
+          type: "PUT",
+          contentType: "application/json",
+          data: JSON.stringify({ colorHue: hue }),
+        });
+      });
+
+      function fetchInitialState() {
+        $.get(`${serverUrl}/properties`, function (data) {
+          const isOn = data.on;
+          updateBulbImage(isOn);
+          $("#brightness").prop("disabled", !isOn);
+          $("#colorPicker").prop("disabled", !isOn);
+          $("#brightness").val(data.brightness);
+          $("#brightness-value").text(data.brightness);
+        });
+      }
+
+      $(document).ready(fetchInitialState);
+    </script>
+  </body>
+</html>

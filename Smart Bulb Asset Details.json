@@ -1,0 +1,58 @@
+{
+  "@context": ["https://www.w3.org/2019/wot/td/v1"],
+  "id": "urn:dev:ops:smart-bulb-1234",
+  "title": "Smart Bulb",
+  "description": "A web-connected smart bulb with on/off, brightness, and color control.",
+  "securityDefinitions": {
+    "nosec_sc": {
+      "scheme": "nosec"
+    }
+  },
+  "security": ["nosec_sc"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["on", "off"],
+      "readOnly": true,
+      "description": "The current status of the bulb."
+    },
+    "brightness": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "The brightness level of the bulb."
+    },
+    "color": {
+      "type": "string",
+      "description": "The color of the bulb in hex format (e.g., #FFFFFF for white)."
+    }
+  },
+  "actions": {
+    "turnOn": {
+      "description": "Turns the bulb on.",
+      "output": {
+        "type": "string"
+      }
+    },
+    "turnOff": {
+      "description": "Turns the bulb off.",
+      "output": {
+        "type": "string"
+      }
+    },
+    "setBrightness": {
+      "description": "Sets the brightness of the bulb.",
+      "input": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    "setColor": {
+      "description": "Sets the color of the bulb.",
+      "input": {
+        "type": "string"
+      }
+    }
+  }
+}
